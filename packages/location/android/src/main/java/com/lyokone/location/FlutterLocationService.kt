@@ -130,7 +130,8 @@ class FlutterLocationService : Service(), PluginRegistry.RequestPermissionsResul
     companion object {
         private const val TAG = "FlutterLocationService"
 
-        private const val REQUEST_PERMISSIONS_REQUEST_CODE: Int = 641
+        const val REQUEST_PERMISSIONS_REQUEST_CODE: Int = 641
+        const val REQUEST_BACKGROUND_PERMISSIONS_REQUEST_CODE: Int = 642
 
         private const val ONGOING_NOTIFICATION_ID = 75418
         private const val CHANNEL_ID = "flutter_location_channel_01"
@@ -211,18 +212,23 @@ class FlutterLocationService : Service(), PluginRegistry.RequestPermissionsResul
     }
 
     fun requestBackgroundPermissions() {
+        Log.d(TAG, "Requesting background permissions.")
+        // print sdk int
+        Log.d(TAG, "SDK_INT: ${Build.VERSION.SDK_INT}")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            Log.d(TAG, "Requesting background permissions for Android Q and above.")
             activity?.let {
+                Log.d(TAG, "Found activity for requesting permissions.")
                 ActivityCompat.requestPermissions(
                     it,
                     arrayOf(
-                        Manifest.permission.ACCESS_FINE_LOCATION,
                         Manifest.permission.ACCESS_BACKGROUND_LOCATION
                     ),
-                    REQUEST_PERMISSIONS_REQUEST_CODE
+                    REQUEST_BACKGROUND_PERMISSIONS_REQUEST_CODE
                 )
             } ?: throw ActivityNotFoundException()
         } else {
+            Log.d(TAG, "Requesting background permissions for Android P and below.")
             location?.result = this.result
             location?.requestPermissions()
             // result passed to Location reference here won't be needed

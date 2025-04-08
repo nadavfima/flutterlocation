@@ -164,27 +164,34 @@ final class MethodCallHandlerImpl implements MethodCallHandler {
     private void enableBackgroundMode(MethodCall call, Result result) {
         final Boolean enable = call.argument("enable");
         if (locationService != null && enable != null) {
+            Log.d(TAG, "enableBackgroundMode: " + enable);
             if (locationService.checkBackgroundPermissions()) {
                 if (enable) {
+                    Log.d(TAG, "enableBackgroundMode: enabling");
                     locationService.enableBackgroundMode();
 
                     result.success(1);
                 } else {
+                    Log.d(TAG, "enableBackgroundMode: disabling");
                     locationService.disableBackgroundMode();
 
                     result.success(0);
                 }
             } else {
+                Log.d(TAG, "enableBackgroundMode: requesting permissions");
                 if (enable) {
+                    Log.d(TAG, "enableBackgroundMode: requesting permissions");
                     locationService.setResult(result);
                     locationService.requestBackgroundPermissions();
                 } else {
+                    Log.d(TAG, "enableBackgroundMode: disabling");
                     locationService.disableBackgroundMode();
 
                     result.success(0);
                 }
             }
         } else {
+            Log.d(TAG, "enableBackgroundMode: no location service");
             result.success(0);
         }
     }

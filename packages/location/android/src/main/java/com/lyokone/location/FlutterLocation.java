@@ -45,7 +45,6 @@ public class FlutterLocation
     @Nullable
     public Activity activity;
 
-    private static final int REQUEST_PERMISSIONS_REQUEST_CODE = 34;
     private static final int REQUEST_CHECK_SETTINGS = 0x1;
 
     private static final int GPS_ENABLE_REQUEST = 0x1001;
@@ -124,12 +123,19 @@ public class FlutterLocation
     }
 
     public boolean onRequestPermissionsResultHandler(int requestCode, String[] permissions, int[] grantResults) {
-        if (requestCode == REQUEST_PERMISSIONS_REQUEST_CODE && permissions.length == 2
-                && permissions[0].equals(Manifest.permission.ACCESS_FINE_LOCATION)
-                && permissions[1].equals(Manifest.permission.ACCESS_COARSE_LOCATION)) {
+        Log.d(TAG, "onRequestPermissionsResultHandler: " + requestCode);
+        // map grantResults to permissions
+        HashMap<String, Integer> permissionMap = new HashMap<>();
+        for (int i = 0; i < permissions.length; i++) {
+            permissionMap.put(permissions[i], grantResults[i]);
+        }
+        if (requestCode == FlutterLocationService.REQUEST_PERMISSIONS_REQUEST_CODE) {
 
-            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            if (permissionMap.containsKey(Manifest.permission.ACCESS_FINE_LOCATION)
+                    && permissionMap.get(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            ) {
                 // fine location permission is granted
+                Log.d(TAG, "Fine location permission granted");
 
                 // Checks if this permission was automatically triggered by a location request
                 if (getLocationResult != null || events != null) {
@@ -139,9 +145,11 @@ public class FlutterLocation
                     result.success(1);
                     result = null;
                 }
-            } else if (grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+            } else if (permissionMap.containsKey(Manifest.permission.ACCESS_COARSE_LOCATION)
+                    && permissionMap.get(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            ) {
                 // coarse location permission is granted
-
+                Log.d(TAG, "Coarse location permission granted");
                 // Checks if this permission was automatically triggered by a location request
                 if (getLocationResult != null || events != null) {
                     startRequestingLocation();
@@ -168,6 +176,40 @@ public class FlutterLocation
                     }
                 }
             }
+
+            return true;
+        } else if (requestCode == FlutterLocationService.REQUEST_BACKGROUND_PERMISSIONS_REQUEST_CODE) {
+            if (permissionMap.containsKey(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                    && permissionMap.get(Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED
+            ) {
+                // background location permission is granted
+                Log.d(TAG, "Background location permission granted");
+                // Checks if this permission was automatically triggered by a location request
+                if (getLocationResult != null || events != null) {
+                    startRequestingLocation();
+                }
+
+                if (result != null) {
+                    result.success(1);
+                    result = null;
+                }
+            } else {
+                if (!shouldShowRequestPermissionRationale()) {
+                    sendError("PERMISSION_DENIED_NEVER_ASK",
+                            "Location permission denied forever - please open app settings", null);
+                    if (result != null) {
+                        result.success(2);
+                        result = null;
+                    }
+                } else {
+                    sendError("PERMISSION_DENIED", "Location permission denied", null);
+                    if (result != null) {
+                        result.success(0);
+                        result = null;
+                    }
+                }
+            }
+
             return true;
         }
         return false;
@@ -365,7 +407,7 @@ public class FlutterLocation
             return;
         }
         ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
-                REQUEST_PERMISSIONS_REQUEST_CODE);
+                FlutterLocationService.REQUEST_PERMISSIONS_REQUEST_CODE);
     }
 
     public boolean shouldShowRequestPermissionRationale() {
