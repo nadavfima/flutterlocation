@@ -19,6 +19,7 @@ import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.PluginRegistry
 
@@ -144,6 +145,7 @@ class FlutterLocationService : Service(), PluginRegistry.RequestPermissionsResul
     // Service is foreground
     private var isForeground = false
 
+    private val activityBindings = LinkedHashSet<ActivityPluginBinding>()
     private var activity: Activity? = null
 
     private var backgroundNotification: BackgroundNotification? = null
@@ -192,6 +194,8 @@ class FlutterLocationService : Service(), PluginRegistry.RequestPermissionsResul
     override fun onDestroy() {
         Log.d(TAG, "Destroying service.")
 
+        activityBindings.clear()
+        setActivity(null)
         location = null
         backgroundNotification = null
 
@@ -278,9 +282,28 @@ class FlutterLocationService : Service(), PluginRegistry.RequestPermissionsResul
         }
     }
 
-    fun setActivity(activity: Activity?) {
+    fun attachActivity(binding: ActivityPluginBinding) {
+        activityBindings.add(binding)
+        setActivity(binding.activity)
+    }
+
+    fun detachActivity(binding: ActivityPluginBinding) {
+        if (activityBindings.remove(binding) && activity === binding.activity) {
+            setActivity(activityBindings.lastOrNull()?.activity)
+        }
+    }
+
+    private fun setActivity(activity: Activity?) {
+        if (this.activity === activity) return
+
+        // Release the previous activity's location callbacks before selecting another one.
+        if (this.activity != null) {
+            location?.setActivity(null)
+        }
         this.activity = activity
-        location?.setActivity(activity)
+        if (activity != null) {
+            location?.setActivity(activity)
+        }
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray): Boolean {

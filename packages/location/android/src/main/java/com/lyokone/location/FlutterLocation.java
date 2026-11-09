@@ -105,12 +105,12 @@ public class FlutterLocation
             createLocationRequest();
             buildLocationSettingsRequest();
         } else {
-            if (mFusedLocationClient != null) {
+            if (mFusedLocationClient != null && mLocationCallback != null) {
                 mFusedLocationClient.removeLocationUpdates(mLocationCallback);
             }
             mFusedLocationClient = null;
             mSettingsClient = null;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && locationManager != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && locationManager != null && mMessageListener != null) {
                 locationManager.removeNmeaListener(mMessageListener);
                 mMessageListener = null;
             }
@@ -390,11 +390,14 @@ public class FlutterLocation
             result.error("MISSING_ACTIVITY", "You should not checkPermissions activation outside of an activity.", null);
             throw new ActivityNotFoundException();
         }
-        int fineLocationPermissionState = ActivityCompat.checkSelfPermission(activity,
-                Manifest.permission.ACCESS_FINE_LOCATION);
-        int coarseLocationPermissionState = ActivityCompat.checkSelfPermission(activity,
-                Manifest.permission.ACCESS_COARSE_LOCATION);
-        return fineLocationPermissionState == PackageManager.PERMISSION_GRANTED || coarseLocationPermissionState == PackageManager.PERMISSION_GRANTED;
+        return hasLocationPermission(activity);
+    }
+
+    static boolean hasLocationPermission(Context context) {
+        return ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED
+                || ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
     }
 
     public void requestPermissions() {

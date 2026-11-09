@@ -29,7 +29,7 @@ public class LocationPlugin implements FlutterPlugin, ActivityAware {
 
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
-        methodCallHandler = new MethodCallHandlerImpl();
+        methodCallHandler = new MethodCallHandlerImpl(binding.getApplicationContext());
         methodCallHandler.startListening(binding.getBinaryMessenger());
         streamHandlerImpl = new StreamHandlerImpl();
         streamHandlerImpl.startListening(binding.getBinaryMessenger());
@@ -96,9 +96,16 @@ public class LocationPlugin implements FlutterPlugin, ActivityAware {
     };
 
     private void initialize(FlutterLocationService service) {
+        if (activityBinding == null || methodCallHandler == null || streamHandlerImpl == null
+                || locationService == service) {
+            return;
+        }
+        if (locationService != null) {
+            dispose();
+        }
         locationService = service;
 
-        locationService.setActivity(activityBinding.getActivity());
+        locationService.attachActivity(activityBinding);
 
         activityBinding.addActivityResultListener(locationService.getLocationActivityResultListener());
         activityBinding.addRequestPermissionsResultListener(locationService.getLocationRequestPermissionsResultListener());
@@ -121,7 +128,7 @@ public class LocationPlugin implements FlutterPlugin, ActivityAware {
             activityBinding.removeRequestPermissionsResultListener(locationService.getLocationRequestPermissionsResultListener());
             activityBinding.removeActivityResultListener(locationService.getLocationActivityResultListener());
 
-            locationService.setActivity(null);
+            locationService.detachActivity(activityBinding);
 
             locationService = null;
         }

@@ -1,5 +1,6 @@
 package com.lyokone.location;
 
+import android.content.Context;
 import android.graphics.Color;
 import android.os.Build;
 import android.util.Log;
@@ -17,6 +18,7 @@ import io.flutter.plugin.common.MethodChannel.Result;
 final class MethodCallHandlerImpl implements MethodCallHandler {
     private static final String TAG = "MethodCallHandlerImpl";
 
+    private final Context applicationContext;
     private FlutterLocation location;
     private FlutterLocationService locationService;
 
@@ -24,6 +26,10 @@ final class MethodCallHandlerImpl implements MethodCallHandler {
     private MethodChannel channel;
 
     private static final String METHOD_CHANNEL_NAME = "lyokone/location";
+
+    MethodCallHandlerImpl(Context applicationContext) {
+        this.applicationContext = applicationContext;
+    }
 
     void setLocation(FlutterLocation location) {
         this.location = location;
@@ -128,11 +134,7 @@ final class MethodCallHandlerImpl implements MethodCallHandler {
             return;
         }
 
-        if (location.checkPermissions()) {
-            result.success(1);
-        } else {
-            result.success(0);
-        }
+        result.success(FlutterLocation.hasLocationPermission(applicationContext) ? 1 : 0);
     }
 
     private void onServiceEnabled(Result result) {
